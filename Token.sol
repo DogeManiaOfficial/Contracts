@@ -299,9 +299,9 @@ interface LockerUnit{
 }
 
 
-contract TestToken is Context, IBEP20, Ownable {
-    string public constant name = "TEST-THREE";
-    string public constant symbol = "TEST-THREE";
+contract DogeManiaToken is Context, IBEP20, Ownable {
+    string public constant name = "DogeMania";
+    string public constant symbol = "DOGEMania";
     string public WebSite;
     string public TGGroup;
     string public Twitter;
