@@ -601,7 +601,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         require(amount > 0, "Transfer amount must be greater than zero");
         uint256 contractTokenBalance = balanceOf(address(this));
 
-        if (!inSwapAndLiquify && contractTokenBalance > 0) {
+        if (!inSwapAndLiquify && contractTokenBalance > 0 && from != pancakeswapV2Pair) {
             swapAndLiquify(contractTokenBalance);
         }
 
