@@ -22,5 +22,5 @@ You can lock any token on any time without any fee. As result of lock you'll rec
 ### Locker Unit
 Can be wirdrawal only by owner-creator, that is master contract (token contract)
 
-### DAO Charity Wallet
+## DogeMania DAO
 Here: https://github.com/DogeManiaOfficial/DAO
