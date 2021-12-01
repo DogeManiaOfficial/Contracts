@@ -313,8 +313,8 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     mapping (address => uint256) private _rOwned;
     mapping (address => uint256) private _tOwned;
     mapping (address => mapping (address => uint256)) private _allowances;
-    mapping (address => mapping (address => uint256)) private _lockerUnitsTimer;
-    mapping (address => address) private _lockerUnitsTokens;
+    mapping (address => mapping (address => uint256)) public _lockerUnitsTimer;
+    mapping (address => address) public _lockerUnitsTokens;
 
     mapping (address => bool) private _isExcludedFromFee;
     mapping (address => bool) private _isExcluded;
@@ -760,10 +760,6 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         return lockerUnitAddr;
     }
 
-    function GetUnlockTimestamp(address _lockerUnitAddr) public view returns(uint256) {
-        return _lockerUnitsTimer[msg.sender][_lockerUnitAddr];
-    }
- 
     function unlockTokens(address _lockerUnitAddr) public {
         require(_lockerUnitsTimer[msg.sender][_lockerUnitAddr] > block.timestamp, "It's too early to withdraw your tokens");
         LockerUnit(_lockerUnitAddr).withdraw(_lockerUnitsTokens[_lockerUnitAddr]);
