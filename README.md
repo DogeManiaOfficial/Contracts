@@ -1,6 +1,8 @@
 # Contracts
 ## Smart Contracts of DogeMania Project
 
+Project website: https://dogemania.io
+
 ### Token
 
 Each buy or transfer
