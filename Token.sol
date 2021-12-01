@@ -466,18 +466,6 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         }
     }
 
-    function _transferBothExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee,, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tCharity) = _getValues(tAmount, recipient);
-        _tOwned[sender] = _tOwned[sender].sub(tAmount);
-        _rOwned[sender] = _rOwned[sender].sub(rAmount);
-        _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
-        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
-        _takeCharity(tCharity);
-        _takeLiquidity(tLiquidity);
-        _reflectFee(rFee, tFee);
-        emit Transfer(sender, recipient, tTransferAmount);
-    }
-
     function excludeFromFee(address account) public onlyOwner {
         _isExcludedFromFee[account] = true;
     }
@@ -493,29 +481,26 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         _tFeeTotal = _tFeeTotal.add(tFee);
     }
     
-
-    function _getValues(uint256 tAmount, address recipient) private view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
+    function _getValues(uint256 tAmount) private view returns (uint256, uint256, uint256, uint256, uint256, uint256) {
         FeesVaules memory rFees;
-        (uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tCharity) = _getTValues(tAmount, recipient);
-        (rFees.rAmount, rFees.rTransferAmount, rFees.rFee, rFees.rCharity) = _getRValues(tAmount, tFee, tLiquidity, tCharity, _getRate());
-        return (rFees.rAmount, rFees.rTransferAmount, rFees.rFee, rFees.rCharity, tTransferAmount, tFee, tLiquidity, tCharity);
+        (uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getTValues(tAmount);
+        (rFees.rAmount, rFees.rTransferAmount, rFees.rFee) = _getRValues(tAmount, tFee, tLiquidity, _getRate());
+        return (rFees.rAmount, rFees.rTransferAmount, rFees.rFee, tTransferAmount, tFee, tLiquidity);
     }
 
-    function _getTValues(uint256 tAmount, address recipient) private view returns (uint256, uint256, uint256, uint256) {
+    function _getTValues(uint256 tAmount) private view returns (uint256, uint256, uint256) {
         uint256 tFee = calculateTaxFee(tAmount);
         uint256 tLiquidity = calculateLiquidityFee(tAmount);
-        uint256 tCharity = calculateCharityFee(tAmount, recipient);
         uint256 tTransferAmount = tAmount.sub(tFee).sub(tLiquidity);
-        return (tTransferAmount, tFee, tLiquidity, tCharity);
+        return (tTransferAmount, tFee, tLiquidity);
     }
 
-    function _getRValues(uint256 tAmount, uint256 tFee, uint256 tLiquidity, uint256 tCharity, uint256 currentRate) private pure returns (uint256, uint256, uint256, uint256) {
+    function _getRValues(uint256 tAmount, uint256 tFee, uint256 tLiquidity, uint256 currentRate) private pure returns (uint256, uint256, uint256) {
         uint256 rAmount = tAmount.mul(currentRate);
         uint256 rFee = tFee.mul(currentRate);
         uint256 rLiquidity = tLiquidity.mul(currentRate);
-        uint256 rCharity = tCharity.mul(currentRate);
         uint256 rTransferAmount = rAmount.sub(rFee).sub(rLiquidity);
-        return (rAmount, rTransferAmount, rFee, rCharity);
+        return (rAmount, rTransferAmount, rFee);
     }
 
     function _getRate() private view returns(uint256) {
@@ -555,29 +540,15 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         );
     }
     
-    function calculateCharityFee(uint256 _amount, address recipient) private view returns (uint256) {
-        if (recipient == pancakeswapV2Pair) {
-            return _amount.mul(Fees._charityFee*2).div(
-                10**2
-            );
-        } else {
-            return _amount.mul(Fees._charityFee).div(
-                10**2
-            );
-        }
-    }
-
     function removeAllFee() private {
-        if(Fees._taxFee == 0 && Fees._liquidityFee == 0 && Fees._charityFee == 0) return;
+        if(Fees._taxFee == 0 && Fees._liquidityFee == 0) return;
         Fees._taxFee = 0;
         Fees._liquidityFee = 0;
-        Fees._charityFee = 0;
     }
 
     function restoreAllFee() private {
         Fees._taxFee = 5;
         Fees._liquidityFee = 3;
-        Fees._charityFee= 2;
     }
 
     function isExcludedFromFee(address account) public view returns(bool) {
@@ -664,13 +635,6 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         Twitter = _twitter;
     }
 
-    function _takeCharity(uint256 tCharity) private {
-        uint256 currentRate =  _getRate();
-        uint256 rCharity = tCharity.mul(currentRate);
-        _rOwned[address(this)] = _rOwned[address(this)].add(rCharity);
-        _tOwned[address(this)] = _tOwned[address(this)].add(tCharity);
-    }
-
     function addLiquidity(uint256 tokenAmount, uint256 ethAmount) private {
         _approve(address(this), address(pancakeswapV2Router), tokenAmount);
 
@@ -687,7 +651,12 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     function _tokenTransfer(address sender, address recipient, uint256 amount,bool takeFee) private {
         if(!takeFee)
             removeAllFee();
-
+        if (recipient == pancakeswapV2Pair && !isExcludedFromFee(sender) && takeFee) {
+            amount = amount - amount.mul(2).div(100) - amount.mul(Fees._charityFee*2).div(100);
+        } else if (takeFee) {
+            _transferStandard(sender, charityWallet, amount.mul(Fees._charityFee).div(100));
+            amount = amount - amount.mul(Fees._charityFee).div(100);
+        }
         if (_isExcluded[sender] && !_isExcluded[recipient]) {
             _transferFromExcluded(sender, recipient, amount);
         } else if (!_isExcluded[sender] && _isExcluded[recipient]) {
@@ -703,7 +672,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     }
 
     function _transferStandard(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee,, uint256 tTransferAmount,, uint256 tLiquidity, uint256 tCharity) = _getValues(tAmount, recipient);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee,, uint256 tTransferAmount,, uint256 tLiquidity) = _getValues(tAmount, recipient);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         
         if (recipient == pancakeswapV2Pair) {
@@ -713,29 +682,37 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
             _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);    
         }
         _takeLiquidity(tLiquidity);
-        _takeCharity(tCharity);
         _reflectFee(rFee, rFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
     function _transferToExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee,, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tCharity) = _getValues(tAmount, recipient);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount, recipient);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
         _takeLiquidity(tLiquidity);
-        _takeCharity(tCharity);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
     function _transferFromExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee,, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity, uint256 tCharity) = _getValues(tAmount, recipient);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount, recipient);
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
         _takeLiquidity(tLiquidity);
-        _takeCharity(tCharity);
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
+    }
+
+    function _transferBothExcluded(address sender, address recipient, uint256 tAmount) private {
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount, recipient);
+        _tOwned[sender] = _tOwned[sender].sub(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
+        _takeLiquidity(tLiquidity);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
     }
