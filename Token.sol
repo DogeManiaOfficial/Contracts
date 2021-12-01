@@ -347,7 +347,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     bytes LockerUnitCode;
 
     event NewLockDeployed(address lockerUnit, address token, address lockerOwner, uint256 unitreleaseTimestamp, uint256 amount);
-    event NewUnlock(address lockerUnit, address token);
+    event SuccessfullUnlock(address lockerUnit, address token);
     event SwapAndLiquify(
         uint256 tokensSwapped,
         uint256 ethReceived,
@@ -763,7 +763,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     function unlockTokens(address _lockerUnitAddr) public {
         require(_lockerUnitsTimer[msg.sender][_lockerUnitAddr] > block.timestamp, "It's too early to withdraw your tokens");
         LockerUnit(_lockerUnitAddr).withdraw(_lockerUnitsTokens[_lockerUnitAddr]);
-        emit NewUnlock(_lockerUnitAddr, _lockerUnitsTokens[_lockerUnitAddr]);
+        emit SuccessfullUnlock(_lockerUnitAddr, _lockerUnitsTokens[_lockerUnitAddr]);
         delete _lockerUnitsTimer[msg.sender][_lockerUnitAddr];
         delete _lockerUnitsTokens[_lockerUnitAddr];
     }
