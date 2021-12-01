@@ -381,7 +381,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     }
 
     function totalSupply() public pure override returns (uint256) {
-        return _tTotal;
+        return _tTotal.sub(balanceOf(deadAddress));
     }
 
     function balanceOf(address account) public view override returns (uint256) {
