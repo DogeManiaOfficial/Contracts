@@ -313,8 +313,8 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     mapping (address => uint256) private _rOwned;
     mapping (address => uint256) private _tOwned;
     mapping (address => mapping (address => uint256)) private _allowances;
-    mapping (address => mapping (address => uint256)) public _lockerUnitsTimer;
-    mapping (address => address) public _lockerUnitsTokens;
+    mapping (address => mapping (address => uint256)) public lockerUnitsTimer;
+    mapping (address => address) public lockerUnitsTokens;
 
     mapping (address => bool) private _isExcludedFromFee;
     mapping (address => bool) private _isExcluded;
@@ -529,15 +529,11 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     }
 
     function calculateTaxFee(uint256 _amount) private view returns (uint256) {
-        return _amount.mul(Fees._taxFee).div(
-            10**2
-        );
+        return _amount.mul(Fees._taxFee).div(100);
     }
 
     function calculateLiquidityFee(uint256 _amount) private view returns (uint256) {
-        return _amount.mul(Fees._liquidityFee).div(
-            10**2
-        );
+        return _amount.mul(Fees._liquidityFee).div(100);
     }
     
     function removeAllFee() private {
@@ -731,17 +727,17 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
           }
         }
         IBEP20(tokenAddress).transferFrom(msg.sender,lockerUnitAddr,amount);
-        _lockerUnitsTimer[msg.sender][lockerUnitAddr] = block.timestamp + lockTime;
-        _lockerUnitsTokens[lockerUnitAddr] = tokenAddress;
+        lockerUnitsTimer[msg.sender][lockerUnitAddr] = block.timestamp + lockTime;
+        lockerUnitsTokens[lockerUnitAddr] = tokenAddress;
         emit NewLockDeployed(lockerUnitAddr, tokenAddress, msg.sender, lockTime, amount);
         return lockerUnitAddr;
     }
 
     function unlockTokens(address _lockerUnitAddr) public {
-        require(_lockerUnitsTimer[msg.sender][_lockerUnitAddr] > block.timestamp, "It's too early to withdraw your tokens");
-        LockerUnit(_lockerUnitAddr).withdraw(_lockerUnitsTokens[_lockerUnitAddr]);
-        emit SuccessfullUnlock(_lockerUnitAddr, _lockerUnitsTokens[_lockerUnitAddr]);
-        delete _lockerUnitsTimer[msg.sender][_lockerUnitAddr];
-        delete _lockerUnitsTokens[_lockerUnitAddr];
+        require(lockerUnitsTimer[msg.sender][_lockerUnitAddr] > block.timestamp, "It's too early to withdraw your tokens");
+        LockerUnit(_lockerUnitAddr).withdraw(lockerUnitsTokens[_lockerUnitAddr]);
+        emit SuccessfullUnlock(_lockerUnitAddr, lockerUnitsTokens[_lockerUnitAddr]);
+        delete lockerUnitsTimer[msg.sender][_lockerUnitAddr];
+        delete lockerUnitsTokens[_lockerUnitAddr];
     }
 }
