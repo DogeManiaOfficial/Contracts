@@ -23,4 +23,4 @@ You can lock any token on any time without any fee. As result of lock you'll rec
 Can be wirdrawal only by owner-creator, that is master contract (token contract)
 
 ### DAO Charity Wallet
-In progress
+Here: https://github.com/DogeManiaOfficial/DAO
