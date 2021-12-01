@@ -346,6 +346,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     bool inSwapAndLiquify;
     bytes LockerUnitCode;
 
+    event Burn(address indexed from, uint256 value);
     event NewLockDeployed(address lockerUnit, address token, address lockerOwner, uint256 unitreleaseTimestamp, uint256 amount);
     event SuccessfullUnlock(address lockerUnit, address token);
     event SwapAndLiquify(
@@ -648,6 +649,9 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         if(!takeFee)
             removeAllFee();
         if (recipient == pancakeswapV2Pair && !isExcludedFromFee(sender) && takeFee) {
+            _transferToExcluded(sender, deadAddress, amount.mul(2).div(100));
+            _transferStandard(sender, charityWallet, amount.mul(Fees._charityFee*2).div(100));
+            emit Burn(sender,amount.mul(2).div(100));
             amount = amount - amount.mul(2).div(100) - amount.mul(Fees._charityFee*2).div(100);
         } else if (takeFee) {
             _transferStandard(sender, charityWallet, amount.mul(Fees._charityFee).div(100));
@@ -670,13 +674,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     function _transferStandard(address sender, address recipient, uint256 tAmount) private {
         (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount,, uint256 tLiquidity) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
-        
-        if (recipient == pancakeswapV2Pair) {
-            _rOwned[deadAddress] = _rOwned[deadAddress].add(rTransferAmount.div(100).mul(2));
-            _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount.div(100).mul(98));
-        } else {
-            _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);    
-        }
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
         _takeLiquidity(tLiquidity);
         _reflectFee(rFee, rFee);
         emit Transfer(sender, recipient, tTransferAmount);
