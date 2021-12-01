@@ -380,7 +380,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         emit Transfer(address(0), _msgSender(), _tTotal);
     }
 
-    function totalSupply() public pure override returns (uint256) {
+    function totalSupply() public view override returns (uint256) {
         return _tTotal.sub(balanceOf(deadAddress));
     }
 
@@ -430,7 +430,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
 
     function reflectionFromToken(uint256 tAmount, bool deductTransferFee) public view returns(uint256) {
         require(tAmount <= _tTotal, "Amount must be less than supply");
-        (uint256 rAmount, uint256 rTransferAmount,,,,,,) = _getValues(tAmount, msg.sender);
+        (uint256 rAmount, uint256 rTransferAmount,,,,) = _getValues(tAmount);
         if (!deductTransferFee) {
             return rAmount;
         } else {
@@ -672,7 +672,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     }
 
     function _transferStandard(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee,, uint256 tTransferAmount,, uint256 tLiquidity) = _getValues(tAmount, recipient);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount,, uint256 tLiquidity) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         
         if (recipient == pancakeswapV2Pair) {
@@ -687,7 +687,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     }
 
     function _transferToExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount, recipient);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
@@ -697,7 +697,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     }
 
     function _transferFromExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount, recipient);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount);
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
@@ -707,7 +707,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     }
 
     function _transferBothExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount, recipient);
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount);
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
