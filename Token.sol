@@ -376,7 +376,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         Twitter = _twitter;
         _isExcludedFromFee[owner()] = true;
         _isExcludedFromFee[address(this)] = true;
-
+        _isExcluded[deadAddress] = true;
         emit Transfer(address(0), _msgSender(), _tTotal);
     }
 
