@@ -316,8 +316,8 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     mapping (address => mapping (address => uint256)) public lockerUnitsTimer;
     mapping (address => address) public lockerUnitsTokens;
 
-    mapping (address => bool) private _isExcludedFromFee;
-    mapping (address => bool) private _isExcluded;
+    mapping (address => bool) public isExcludedFromFee;
+    mapping (address => bool) public isExcludedFromReward;
     address[] private _excluded;
 
     uint256 private constant MAX = ~uint256(0);
@@ -375,9 +375,9 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         WebSite = _webSite;
         TGGroup = _tgGroup;
         Twitter = _twitter;
-        _isExcludedFromFee[owner()] = true;
-        _isExcludedFromFee[address(this)] = true;
-        _isExcluded[deadAddress] = true;
+        isExcludedFromFee[owner()] = true;
+        isExcludedFromFee[address(this)] = true;
+        isExcludedFromReward[deadAddress] = true;
         emit Transfer(address(0), _msgSender(), _tTotal);
     }
 
@@ -386,7 +386,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     }
 
     function balanceOf(address account) public view override returns (uint256) {
-        if (_isExcluded[account]) return _tOwned[account];
+        if (isExcludedFromReward[account]) return _tOwned[account];
         return tokenFromReflection(_rOwned[account]);
     }
 
@@ -417,12 +417,8 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
 
     function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
         _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "BEP20: decreased allowance below zero"));
-        return true;
         // 4:20
-    }
-
-    function isExcludedFromReward(address account) public view returns (bool) {
-        return _isExcluded[account];
+        return true;
     }
 
     function totalFees() public view returns (uint256) {
@@ -446,21 +442,21 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     }
 
     function excludeFromReward(address account) public onlyOwner() {
-        require(!_isExcluded[account], "Account is already excluded");
+        require(!isExcludedFromReward[account], "Account is already excluded");
         if(_rOwned[account] > 0) {
             _tOwned[account] = tokenFromReflection(_rOwned[account]);
         }
-        _isExcluded[account] = true;
+        isExcludedFromReward[account] = true;
         _excluded.push(account);
     }
 
     function includeInReward(address account) external onlyOwner() {
-        require(_isExcluded[account], "Account doesn't excluded");
+        require(isExcludedFromReward[account], "Account doesn't excluded");
         for (uint256 i = 0; i < _excluded.length; i++) {
             if (_excluded[i] == account) {
                 _excluded[i] = _excluded[_excluded.length - 1];
                 _tOwned[account] = 0;
-                _isExcluded[account] = false;
+                isExcludedFromReward[account] = false;
                 _excluded.pop();
                 break;
             }
@@ -468,11 +464,11 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     }
 
     function excludeFromFee(address account) public onlyOwner {
-        _isExcludedFromFee[account] = true;
+        isExcludedFromFee[account] = true;
     }
 
     function includeInFee(address account) public onlyOwner {
-        _isExcludedFromFee[account] = false;
+        isExcludedFromFee[account] = false;
     }
 
     receive() external payable {}
@@ -525,7 +521,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         uint256 currentRate =  _getRate();
         uint256 rLiquidity = tLiquidity.mul(currentRate);
         _rOwned[address(this)] = _rOwned[address(this)].add(rLiquidity);
-        if(_isExcluded[address(this)])
+        if(isExcludedFromReward[address(this)])
             _tOwned[address(this)] = _tOwned[address(this)].add(tLiquidity);
     }
 
@@ -546,10 +542,6 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     function restoreAllFee() private {
         Fees._taxFee = 5;
         Fees._liquidityFee = 3;
-    }
-
-    function isExcludedFromFee(address account) public view returns(bool) {
-        return _isExcludedFromFee[account];
     }
 
     function _approve(address owner, address spender, uint256 amount) private {
@@ -574,7 +566,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         }
 
         bool takeFee = true;
-        if(_isExcludedFromFee[from] || _isExcludedFromFee[to]){
+        if(isExcludedFromFee[from] || isExcludedFromFee[to]){
             takeFee = false;
         }
 
@@ -648,7 +640,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     function _tokenTransfer(address sender, address recipient, uint256 amount,bool takeFee) private {
         if(!takeFee)
             removeAllFee();
-        if (recipient == pancakeswapV2Pair && !isExcludedFromFee(sender) && takeFee) {
+        if (recipient == pancakeswapV2Pair && !isExcludedFromFee[sender] && takeFee) {
             _transferToExcluded(sender, deadAddress, amount.mul(2).div(100));
             _transferStandard(sender, charityWallet, amount.mul(Fees._charityFee*2).div(100));
             emit Burn(sender,amount.mul(2).div(100));
@@ -657,11 +649,11 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
             _transferStandard(sender, charityWallet, amount.mul(Fees._charityFee).div(100));
             amount = amount - amount.mul(Fees._charityFee).div(100);
         }
-        if (_isExcluded[sender] && !_isExcluded[recipient]) {
+        if (isExcludedFromReward[sender] && !isExcludedFromReward[recipient]) {
             _transferFromExcluded(sender, recipient, amount);
-        } else if (!_isExcluded[sender] && _isExcluded[recipient]) {
+        } else if (!isExcludedFromReward[sender] && isExcludedFromReward[recipient]) {
             _transferToExcluded(sender, recipient, amount);
-        } else if (_isExcluded[sender] && _isExcluded[recipient]) {
+        } else if (isExcludedFromReward[sender] && isExcludedFromReward[recipient]) {
             _transferBothExcluded(sender, recipient, amount);
         } else {
             _transferStandard(sender, recipient, amount);
