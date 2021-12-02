@@ -3,7 +3,7 @@
 
 Project website: https://dogemania.io
 
-### Token
+### Token contract
 
 Each buy or transfer
 1. Hodlers yield 5%
@@ -16,10 +16,10 @@ Each sell
 3. DAO Charity fee 4%
 4. Burn fee 2%
 
-#### Locker
+#### Implemented Locker
 You can lock any token on any time without any fee. As result of lock, you will receive the address of locker unit contract, which you will need when you unlock your tokens
 
-### Locker Unit
+### Locker Unit contract
 Only creator (master contract) can withdraw tokens
 
 ## DogeMania DAO
