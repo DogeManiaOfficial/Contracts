@@ -17,10 +17,10 @@ Each sell
 4. Burn fee 2%
 
 #### Locker
-You can lock any token on any time without any fee. As result of lock you'll recieve locker unit contract address, wich will be needed when you'll unlocking your your tokens
+You can lock any token on any time without any fee. As result of lock, you will receive the address of locker unit contract, which you will need when you unlock your tokens
 
 ### Locker Unit
-Can be wirdrawal only by owner-creator, that is master contract (token contract)
+Only creator (master contract) can withdraw tokens
 
 ## DogeMania DAO
 Here: https://github.com/DogeManiaOfficial/DAO
