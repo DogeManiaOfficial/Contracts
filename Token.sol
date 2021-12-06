@@ -292,6 +292,13 @@ interface IPancakeswapV2Router02 is IPancakeswapV2Router01 {
         address to,
         uint deadline
     ) external;
+    function swapExactTokensForTokensSupportingFeeOnTransferTokens(
+        uint amountIn,
+        uint amountOutMin,
+        address[] calldata path,
+        address to,
+        uint deadline
+    ) external;
 }
 
 interface LockerUnit{
@@ -701,6 +708,20 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         _takeLiquidity(tLiquidity);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
+    }
+
+    function buybackDogeManiaForToken (address token) external {
+        address[] memory path = new address[](2);
+        path[0] = token;
+        path[1] = address(this);
+        IBEP20(token).approve(address(pancakeswapV2Router), IBEP20(token).balanceOf(address(this)));
+        pancakeswapV2Router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            IBEP20(token).balanceOf(address(this)),
+            0,
+            path,
+            deadAddress,
+            block.timestamp
+        );
     }
 
     function lockTokens(address tokenAddress, uint256 amount, uint256 lockTime) public returns(address){
