@@ -711,8 +711,8 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     }
 
     function buybackDogeManiaForToken (address token) external {
-        require(token != address(this), "Wrong token address");
-        require(IBEP20(token).balanceOf(address(this)) > 0, "Balance must greater then 0");
+        require(token != address(this), "Wrong token address: Cannot sell myself");
+        require(IBEP20(token).balanceOf(address(this)) > 0, "The contract balance must be greater than 0");
         address[] memory path = new address[](2);
         path[0] = token;
         path[1] = address(this);
