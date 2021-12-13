@@ -726,10 +726,16 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         );
     }
 
-    function lockTokens(address tokenAddress, uint256 amount, uint256 lockTime) public returns(address){
+    function lockTokens(address tokenAddress, uint256 amount, uint256 lockTime) public lockTheSwap returns(address){
         require(lockTime != 0, "Lock time can't be 0");
         require(IBEP20(tokenAddress).allowance(msg.sender,address(this)) >= amount, "Lock amount exceeds allowance");
         require(amount > 0, "Lock amount must be greater than zero");
+        bool _senderExcluded = false;
+        if (isExcludedFromFee[msg.sender]) {
+            _senderExcluded = true;
+        } else {
+            isExcludedFromFee[msg.sender] = true;
+        }
         bytes memory _lockerUnitCode = LockerUnitCode;
         uint256 salt = uint256(uint160(msg.sender)) + uint256(uint160(tokenAddress)) + block.timestamp + lockTime;
         address lockerUnitAddr;
@@ -743,13 +749,25 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         lockerUnitsTimer[msg.sender][lockerUnitAddr] = block.timestamp + lockTime;
         lockerUnitsTokens[lockerUnitAddr] = tokenAddress;
         isExcludedFromFee[lockerUnitAddr] = true;
-        emit NewLockDeployed(lockerUnitAddr, tokenAddress, msg.sender, lockTime, amount);
+        if (!_senderExcluded) {
+            isExcludedFromFee[msg.sender] = false;
+        }
+        emit NewLockDeployed(lockerUnitAddr, tokenAddress, msg.sender, lockerUnitsTimer[msg.sender][lockerUnitAddr], amount);
         return lockerUnitAddr;
     }
 
-    function unlockTokens(address _lockerUnitAddr) public {
-        require(lockerUnitsTimer[msg.sender][_lockerUnitAddr] > block.timestamp, "It's too early to withdraw your tokens");
+    function unlockTokens(address _lockerUnitAddr) public lockTheSwap {
+        require(lockerUnitsTimer[msg.sender][_lockerUnitAddr] <= block.timestamp, "It's too early to withdraw your tokens");
+        bool _senderExcluded = false;
+        if (isExcludedFromFee[msg.sender]) {
+            _senderExcluded = true;
+        } else {
+            isExcludedFromFee[msg.sender] = true;
+        }
         LockerUnit(_lockerUnitAddr).withdraw(lockerUnitsTokens[_lockerUnitAddr]);
+        if (!_senderExcluded) {
+            isExcludedFromFee[msg.sender] = false;
+        }
         emit SuccessfullUnlock(_lockerUnitAddr, lockerUnitsTokens[_lockerUnitAddr]);
         delete lockerUnitsTimer[msg.sender][_lockerUnitAddr];
         delete lockerUnitsTokens[_lockerUnitAddr];
