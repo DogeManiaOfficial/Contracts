@@ -742,6 +742,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         IBEP20(tokenAddress).transferFrom(msg.sender,lockerUnitAddr,amount);
         lockerUnitsTimer[msg.sender][lockerUnitAddr] = block.timestamp + lockTime;
         lockerUnitsTokens[lockerUnitAddr] = tokenAddress;
+        isExcludedFromFee[lockerUnitAddr] = true;
         emit NewLockDeployed(lockerUnitAddr, tokenAddress, msg.sender, lockTime, amount);
         return lockerUnitAddr;
     }
