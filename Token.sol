@@ -310,8 +310,9 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     string public constant name = "DogeMania";
     string public constant symbol = "DOGEMania";
     string public WebSite;
-    string public TGGroup;
+    string public Telegram;
     string public Twitter;
+    string public Instagram;
     uint8 public constant decimals = 9;
 
     using SafeMath for uint256;
@@ -329,6 +330,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
 
     uint256 private constant MAX = ~uint256(0);
     uint256 private constant _tTotal = 420 * 10**6 * 10**9;
+    uint256 private constant numTokensSellToAddToLiquidity = 420 * 10**9;
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
 
@@ -368,7 +370,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         inSwapAndLiquify = false;
     }
 
-    constructor (address _Router, address _marketingAddress, address _charityWallet, bytes memory _lockerUnitCode, string memory _webSite, string memory _tgGroup, string memory _twitter) {
+    constructor (address _Router, address _marketingAddress, address _charityWallet, bytes memory _lockerUnitCode, string memory _webSite, string memory _telegram, string memory _twitter, string memory _instagram) {
         _rOwned[_msgSender()] = _rTotal;
         IPancakeswapV2Router02 _pancakeswapV2Router = IPancakeswapV2Router02(_Router);
         
@@ -380,8 +382,9 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         pancakeswapV2Router = _pancakeswapV2Router;
         LockerUnitCode = _lockerUnitCode;
         WebSite = _webSite;
-        TGGroup = _tgGroup;
+        Telegram = _telegram;
         Twitter = _twitter;
+        Instagram = _instagram;
         isExcludedFromFee[owner()] = true;
         isExcludedFromFee[address(this)] = true;
         isExcludedFromReward[deadAddress] = true;
@@ -414,6 +417,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
         _transfer(sender, recipient, amount);
         _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "BEP20: transfer amount exceeds allowance"));
+        // 4:20
         return true;
     }
 
@@ -424,7 +428,6 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
 
     function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
         _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "BEP20: decreased allowance below zero"));
-        // 4:20
         return true;
     }
 
@@ -573,7 +576,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
             takeFee = false;
         }
 
-        if (!inSwapAndLiquify && contractTokenBalance > 0 && from != pancakeswapV2Pair && takeFee) {
+        if (!inSwapAndLiquify && contractTokenBalance >= numTokensSellToAddToLiquidity && from != pancakeswapV2Pair && takeFee) {
             swapAndLiquify(contractTokenBalance);
         }
 
@@ -623,12 +626,16 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         WebSite = _webSite;
     }
 
-    function setTGGroup(string memory _tgGroup) external onlyOwner() {
-        TGGroup = _tgGroup;
+    function setTelegram(string memory _telegram) external onlyOwner() {
+        Telegram = _telegram;
     }
 
     function setTwitter(string memory _twitter) external onlyOwner() {
         Twitter = _twitter;
+    }
+    
+    function setInstagram(string memory _instagram) external onlyOwner() {
+        Instagram = _instagram;
     }
 
     function addLiquidity(uint256 tokenAmount, uint256 ethAmount) private {
