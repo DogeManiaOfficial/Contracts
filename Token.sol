@@ -573,7 +573,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
             takeFee = false;
         }
 
-        if (!inSwapAndLiquify && contractTokenBalance > 0 && from != pancakeswapV2Pair && !takeFee) {
+        if (!inSwapAndLiquify && contractTokenBalance > 0 && from != pancakeswapV2Pair && takeFee) {
             swapAndLiquify(contractTokenBalance);
         }
 
