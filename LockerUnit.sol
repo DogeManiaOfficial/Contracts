@@ -91,9 +91,9 @@ contract LockerUnit {
         _;
     }
 
-    function withdraw(address token) external onlyOwner {
+    function withdraw(address token, address recipient) external onlyOwner {
         require(IERC20(token).balanceOf(address(this)) > 0, 'There is no such tokens');
-        IERC20(token).transfer(msg.sender, IERC20(token).balanceOf(address(this)));
+        IERC20(token).transfer(recipient, IERC20(token).balanceOf(address(this)));
         selfdestruct(payable(msg.sender));
     }
 }
