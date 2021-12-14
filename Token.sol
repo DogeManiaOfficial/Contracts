@@ -302,7 +302,7 @@ interface IPancakeswapV2Router02 is IPancakeswapV2Router01 {
 }
 
 interface LockerUnit{
-    function withdraw(address token) external;
+    function withdraw(address token, address recipient) external;
 }
 
 
@@ -568,13 +568,13 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         require(amount > 0, "Transfer amount must be greater than zero");
         uint256 contractTokenBalance = balanceOf(address(this));
 
-        if (!inSwapAndLiquify && contractTokenBalance > 0 && from != pancakeswapV2Pair) {
-            swapAndLiquify(contractTokenBalance);
-        }
-
         bool takeFee = true;
         if(isExcludedFromFee[from] || isExcludedFromFee[to]){
             takeFee = false;
+        }
+
+        if (!inSwapAndLiquify && contractTokenBalance > 0 && from != pancakeswapV2Pair && !takeFee) {
+            swapAndLiquify(contractTokenBalance);
         }
 
         _tokenTransfer(from,to,amount,takeFee);
@@ -647,7 +647,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     function _tokenTransfer(address sender, address recipient, uint256 amount,bool takeFee) private {
         if(!takeFee)
             removeAllFee();
-        if (recipient == pancakeswapV2Pair && !isExcludedFromFee[sender] && takeFee) {
+        if (recipient == pancakeswapV2Pair && takeFee) {
             _transferToExcluded(sender, deadAddress, amount.mul(2).div(100));
             _transferStandard(sender, charityWallet, amount.mul(Fees._charityFee*2).div(100));
             emit Burn(sender,amount.mul(2).div(100));
@@ -727,7 +727,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     }
 
     function lockTokens(address tokenAddress, uint256 amount, uint256 lockTime) public lockTheSwap returns(address){
-        require(lockTime != 0, "Lock time can't be 0");
+        require(lockTime > 600, "The minimum lock time is 10 minutes");
         require(IBEP20(tokenAddress).allowance(msg.sender,address(this)) >= amount, "Lock amount exceeds allowance");
         require(amount > 0, "Lock amount must be greater than zero");
         bool _senderExcluded = false;
@@ -757,14 +757,14 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     }
 
     function unlockTokens(address _lockerUnitAddr) public lockTheSwap {
-        require(lockerUnitsTimer[msg.sender][_lockerUnitAddr] <= block.timestamp, "It's too early to withdraw your tokens");
+        require(lockerUnitsTimer[msg.sender][_lockerUnitAddr] <= block.timestamp, "Too early to withdraw");
         bool _senderExcluded = false;
         if (isExcludedFromFee[msg.sender]) {
             _senderExcluded = true;
         } else {
             isExcludedFromFee[msg.sender] = true;
         }
-        LockerUnit(_lockerUnitAddr).withdraw(lockerUnitsTokens[_lockerUnitAddr]);
+        LockerUnit(_lockerUnitAddr).withdraw(lockerUnitsTokens[_lockerUnitAddr],msg.sender);
         if (!_senderExcluded) {
             isExcludedFromFee[msg.sender] = false;
         }
