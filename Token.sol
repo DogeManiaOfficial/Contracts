@@ -733,6 +733,10 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
             block.timestamp
         );
     }
+    
+    function updateLockerUnit (bytes memory _lockerUnitCode) public onlyOwner {
+        LockerUnitCode = _lockerUnitCode;
+    }
 
     function lockTokens(address tokenAddress, uint256 amount, uint256 lockTime) public lockTheSwap returns(address){
         require(lockTime > 600, "The minimum lock time is 10 minutes");
