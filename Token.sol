@@ -307,13 +307,13 @@ interface LockerUnit{
 
 
 contract DogeManiaToken is Context, IBEP20, Ownable {
-    string public constant name = "DogeMania";
-    string public constant symbol = "DOGEMania";
+    string public constant _name = "DogeMania";
+    string public constant _symbol = "DOGEMania";
     string public WebSite;
     string public Telegram;
     string public Twitter;
     string public Instagram;
-    uint8 public constant decimals = 9;
+    uint8 public constant _decimals = 9;
 
     using SafeMath for uint256;
     using Address for address;
@@ -388,6 +388,18 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         isExcludedFromFee[address(this)] = true;
         isExcludedFromReward[deadAddress] = true;
         emit Transfer(address(0), _msgSender(), _tTotal);
+    }
+
+    function decimals() external pure returns (uint8) {
+        return _decimals;
+    }
+
+    function symbol() external pure returns (string memory) {
+        return _symbol;
+    }
+
+    function name() external pure returns (string memory) {
+        return _name;
     }
 
     function totalSupply() public view override returns (uint256) {
