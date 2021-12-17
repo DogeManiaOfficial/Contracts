@@ -738,7 +738,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     }
 
     function lockTokens(address tokenAddress, uint256 amount, uint256 lockTime) public lockTheSwap returns(address){
-        require(lockTime > 600, "The minimum lock time is 10 minutes");
+        require(lockTime >= 600, "The minimum lock time is 10 minutes");
         require(IBEP20(tokenAddress).allowance(msg.sender,address(this)) >= amount, "Lock amount exceeds allowance");
         require(amount > 0, "Lock amount must be greater than zero");
         bool _senderExcluded = false;
@@ -768,6 +768,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
     }
 
     function unlockTokens(address _lockerUnitAddr) public lockTheSwap {
+        require(lockerUnitsTimer[msg.sender][_lockerUnitAddr] != 0, "No locker found associated with your address");
         require(lockerUnitsTimer[msg.sender][_lockerUnitAddr] <= block.timestamp, "Too early to withdraw");
         bool _senderExcluded = false;
         if (isExcludedFromFee[msg.sender]) {
