@@ -370,7 +370,7 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         inSwapAndLiquify = false;
     }
 
-    constructor (address _Router, address _marketingAddress, address _charityWallet, bytes memory _lockerUnitCode, string memory _webSite, string memory _telegram, string memory _twitter, string memory _instagram) {
+    constructor (address _Router, address _marketingAddress, address _charityWallet, string memory _webSite, string memory _telegram, string memory _twitter, string memory _instagram) {
         _rOwned[_msgSender()] = _rTotal;
         IPancakeswapV2Router02 _pancakeswapV2Router = IPancakeswapV2Router02(_Router);
         
@@ -380,7 +380,6 @@ contract DogeManiaToken is Context, IBEP20, Ownable {
         pancakeswapV2Pair = IPancakeswapV2Factory(_pancakeswapV2Router.factory()).createPair(address(this), _pancakeswapV2Router.WETH());
 
         pancakeswapV2Router = _pancakeswapV2Router;
-        LockerUnitCode = _lockerUnitCode;
         WebSite = _webSite;
         Telegram = _telegram;
         Twitter = _twitter;
