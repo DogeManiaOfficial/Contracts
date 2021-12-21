@@ -100,4 +100,6 @@ contract LockerUnit {
         }
         selfdestruct(payable(msg.sender));
     }
+    
+    receive() external payable {}
 }
